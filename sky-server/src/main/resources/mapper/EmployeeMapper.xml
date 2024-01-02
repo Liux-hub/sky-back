@@ -5,8 +5,10 @@
 
     <!--  新增数据  -->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into employee(id,name,username,password,phone,sex,id_number,status,create_time,update_time,create_user,update_user)
-        values (#{id}, #{name}, #{username}, #{password}, #{phone}, #{sex},#{idNumber},#{status},#{createTime},#{updateTime},#{createUser},#{updateUser})
+        insert into employee(id, name, username, password, phone, sex, id_number, status, create_time, update_time,
+                             create_user, update_user)
+        values (#{id}, #{name}, #{username}, #{password}, #{phone}, #{sex}, #{idNumber}, #{status}, #{createTime},
+                #{updateTime}, #{createUser}, #{updateUser})
     </insert>
 
     <!--  分页查询  -->
@@ -53,5 +55,11 @@
         </set>
         where id = #{id}
     </update>
+
+    <select id="getById" resultType="employee">
+        select *
+        from employee
+        where id = #{id}
+    </select>
 
 </mapper>
