@@ -20,6 +20,7 @@ import com.sky.service.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
@@ -34,7 +35,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Autowired
     private EmployeeMapper employeeMapper;
-
 
 
     /**
@@ -70,6 +70,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /**
      * 新增员工
+     *
      * @param employeeDTO
      * @return
      */
@@ -77,7 +78,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public Integer save(EmployeeDTO employeeDTO) {
         Employee employee = new Employee();
         //对象属性拷贝
-        BeanUtils.copyProperties(employeeDTO,employee);
+        BeanUtils.copyProperties(employeeDTO, employee);
 
         employee.setStatus(StatusConstant.ENABLE);
         employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
@@ -93,14 +94,34 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     //分页查询
-    public PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO){
+    public PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO) {
         //开始分页查询
-        PageHelper.startPage(employeePageQueryDTO.getPage(),employeePageQueryDTO.getPageSize());
+        PageHelper.startPage(employeePageQueryDTO.getPage(), employeePageQueryDTO.getPageSize());
         Page<Employee> page = employeeMapper.pageQuery(employeePageQueryDTO);
         PageResult pageResult = new PageResult();
         pageResult.setRecords(page.getResult());
         pageResult.setTotal(page.getTotal());
         return pageResult;
+    }
+
+    /**
+     * 修改状态
+     *
+     * @param status 状态码
+     * @param id     员工id
+     */
+    @Override
+    public void startOrStop(Integer status, Long id) {
+        //或者通过@Builder构建器实现
+//        Employee employee = new Employee();
+//        employee.setId(id);
+//        employee.setStatus(status);
+        Employee employee = Employee.builder()
+                .status(status)
+                .id(id)
+                .build();
+        //传入实体类，动态更新
+        employeeMapper.update(employee);
     }
 
 }
