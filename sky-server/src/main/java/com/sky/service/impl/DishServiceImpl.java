@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -43,14 +44,12 @@ public class DishServiceImpl implements DishService {
     @Override
     @Transactional
     public void saveWithFlavour(DishDTO dishDTO) {
-
         Dish dish = new Dish();
         BeanUtils.copyProperties(dishDTO, dish);
         //菜品表插入一条数据
         dishMapper.insert(dish);
         //获取上一条insert语句生成的主键值
         Long dishId = dish.getId();
-
         //向口味表插入n条数据
         List<DishFlavor> flavors = dishDTO.getFlavors();
         if (flavors != null && flavors.size() > 0) {
@@ -65,12 +64,10 @@ public class DishServiceImpl implements DishService {
     @Override
     public PageResult pageQuery(DishPageQueryDTO dishPageQueryDTO) {
         PageHelper.startPage(dishPageQueryDTO.getPage(), dishPageQueryDTO.getPageSize());
-
         Page<DishVO> page = dishMapper.pageQuery(dishPageQueryDTO);
         PageResult pageResult = new PageResult();
         pageResult.setTotal(page.getTotal());
         pageResult.setRecords(page.getResult());
-
         return pageResult;
     }
 
@@ -90,12 +87,42 @@ public class DishServiceImpl implements DishService {
         if (setmealIds != null && setmealIds.size() > 0) {
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
-
         //删除菜品，菜品关联口味也要删除
-        for(Long id : ids){
-            dishMapper.deleteById(id);
-            dishFlavorMapper.deleteByDishId(id);
+        dishMapper.deleteById(ids);
+        dishFlavorMapper.deleteByDishId(ids);
+    }
+
+    @Override
+    public DishVO getById(Long id) {
+        Dish dish = dishMapper.getById(id);
+        DishVO dishVO = new DishVO();
+        BeanUtils.copyProperties(dish,dishVO);
+        List<DishFlavor> flavors = dishFlavorMapper.getByDishId(id);
+        dishVO.setFlavors(flavors);
+        return dishVO;
+    }
+
+    @Override
+    @Transactional
+    public void updateWithFlavor(DishDTO dishDTO) {
+        Dish dish = new Dish();
+        BeanUtils.copyProperties(dishDTO,dish);
+        dishMapper.update(dish);
+
+        //先删除flavour
+        List<Long> ids = new ArrayList<>();
+        ids.add(dish.getId());
+        dishFlavorMapper.deleteByDishId(ids);
+        //再添加
+        List<DishFlavor> flavors = dishDTO.getFlavors();
+        if(flavors != null && flavors.size() > 0){
+            flavors.forEach(dishFlavor -> {
+                dishFlavor.setDishId(dishDTO.getId());
+            });
+            dishFlavorMapper.insertBatch(flavors);
         }
+
+
 
     }
 }
